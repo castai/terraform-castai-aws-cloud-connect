@@ -1,0 +1,51 @@
+provider "restapi" {
+  uri                  = var.castai_api_url
+  write_returns_object = true
+
+  headers = {
+    "Content-Type" = "application/json"
+    "X-API-Key"    = var.castai_api_key
+  }
+}
+
+locals {
+  integration_metadata = merge(
+    {
+      crossRoleUserArn  = local.castai_user_arn
+      organizationScope = local.is_management_account || local.is_multi_account
+    },
+    (local.is_management_account || local.is_multi_account) && length(var.account_ids) > 0 ? {
+      accountIds = var.account_ids
+    } : {},
+    local.eks_enabled ? {
+      k8sObjectsSyncEnabled = true
+    } : {},
+    local.eks_enabled && length(var.eks_cluster_arns) > 0 ? {
+      eksClusterArns = var.eks_cluster_arns
+    } : {}
+  )
+}
+
+resource "restapi_object" "castai_integration" {
+  path = "/inventory/v1beta/organizations/${var.castai_organization_id}/cloud-asset-integrations"
+
+  data = jsonencode({
+    enabled  = true
+    name     = var.integration_name
+    provider = "AWS"
+    scope    = var.scope
+    aws_credentials = {
+      assume_role_arn = aws_iam_role.castai_discovery.arn
+    }
+    metadata = local.integration_metadata
+  })
+
+  depends_on = [
+    aws_iam_role_policy_attachment.org_management,
+    aws_iam_role_policy_attachment.discovery,
+    aws_iam_role_policy_attachment.managed,
+    aws_cloudformation_stack_set_instance.member_accounts,
+    aws_cloudformation_stack_set_instance.multi_account,
+    aws_cloudformation_stack.eks_access,
+  ]
+}
