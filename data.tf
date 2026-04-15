@@ -14,6 +14,23 @@ check "onboarding_config_status" {
   }
 }
 
+check "cur_s3_bucket_config" {
+  assert {
+    condition     = (var.cur_s3_bucket_name == "") == (var.cur_s3_bucket_region == "")
+    error_message = "cur_s3_bucket_name and cur_s3_bucket_region must both be set or both be empty."
+  }
+}
+
+check "onboarding_config_has_permissions" {
+  assert {
+    condition = (
+      length(try(local.onboarding_config.awsConfig.permissions, [])) > 0 ||
+      length(try(local.onboarding_config.awsConfig.managedPolicies, [])) > 0
+    )
+    error_message = "Onboarding config returned no permissions and no managed policies for scope '${var.scope}'. The IAM role would have no access."
+  }
+}
+
 locals {
   onboarding_config = jsondecode(data.http.onboarding_config.response_body)
   castai_user_arn   = local.onboarding_config.awsConfig.castUserArn
