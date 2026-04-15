@@ -16,9 +16,8 @@ module "castai_aws_integration" {
     Purpose   = "CAST AI Cloud Asset Discovery"
   }
 
-  # EKS access entries for k8s object sync (optional)
-  # eks_k8s_sync_enabled = true
-  # eks_cluster_arns     = ["arn:aws:eks:us-east-1:123456789012:cluster/my-cluster"]
+  eks_k8s_sync_enabled = true
+  eks_cluster_arns     = ["arn:aws:eks:us-east-1:487609081575:cluster/ihor-14-04"]
 }
 
 variable "castai_api_key" {
