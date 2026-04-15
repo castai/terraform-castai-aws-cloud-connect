@@ -22,6 +22,15 @@ locals {
     } : {},
     local.eks_enabled && length(var.eks_cluster_arns) > 0 ? {
       eksClusterArns = var.eks_cluster_arns
+    } : {},
+    var.cur_s3_bucket_name != "" ? {
+      curS3Bucket = merge(
+        {
+          name   = var.cur_s3_bucket_name
+          region = var.cur_s3_bucket_region
+        },
+        var.cur_s3_bucket_account_id != "" ? { accountId = var.cur_s3_bucket_account_id } : {}
+      )
     } : {}
   )
 }
@@ -38,6 +47,12 @@ resource "restapi_object" "castai_integration" {
       assume_role_arn = aws_iam_role.castai_discovery.arn
     }
     metadata = local.integration_metadata
+    settings = {
+      commitments = {
+        defaultStatus  = var.commitments_default_status
+        autoAssignment = var.commitments_auto_assignment
+      }
+    }
   })
 
   depends_on = [
@@ -46,6 +61,6 @@ resource "restapi_object" "castai_integration" {
     aws_iam_role_policy_attachment.managed,
     aws_cloudformation_stack_set_instance.member_accounts,
     aws_cloudformation_stack_set_instance.multi_account,
-    aws_cloudformation_stack.eks_access,
+    aws_eks_access_policy_association.castai,
   ]
 }

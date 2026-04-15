@@ -59,14 +59,38 @@ resource "aws_iam_policy" "discovery" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = local.selected_permissions
-        Resource = "*"
-      }
-    ]
+    Statement = concat(
+      [
+        {
+          Effect   = "Allow"
+          Action   = local.selected_permissions
+          Resource = "*"
+        }
+      ],
+      local.cur_s3_statement
+    )
   })
+}
+
+# Standalone S3 policy for scopes that use managed policies (e.g. ALL uses ReadOnlyAccess,
+# which already includes S3, but we still scope it down to the specific CUR bucket).
+resource "aws_iam_policy" "cur_s3" {
+  count = var.cur_s3_bucket_name != "" && length(local.selected_permissions) == 0 ? 1 : 0
+
+  name = "castai-cur-s3-readonly-policy"
+  tags = var.tags
+
+  policy = jsonencode({
+    Version   = "2012-10-17"
+    Statement = local.cur_s3_statement
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "cur_s3" {
+  count = var.cur_s3_bucket_name != "" && length(local.selected_permissions) == 0 && local.attach_discovery_to_current ? 1 : 0
+
+  role       = aws_iam_role.castai_discovery.name
+  policy_arn = aws_iam_policy.cur_s3[0].arn
 }
 
 # Attach discovery permissions to the role in the current account:

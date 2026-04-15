@@ -1,7 +1,7 @@
 variable "castai_api_url" {
-  description = "CAST AI API URL"
+  description = "Cast AI API URL"
   type        = string
-  default     = "https://api.cast.ai"
+  default     = "https://api.dev-master.cast.ai"
 }
 
 variable "castai_api_key" {
@@ -78,6 +78,41 @@ variable "stackset_execution_role_name" {
   description = "Name of the IAM role in target accounts that CloudFormation StackSets will assume to deploy resources. Must exist in each target account. Defaults to AWSCloudFormationStackSetExecutionRole."
   type        = string
   default     = "AWSCloudFormationStackSetExecutionRole"
+}
+
+variable "commitments_default_status" {
+  description = "Default status for imported commitments (Reserved Instances, Savings Plans). One of: ACTIVE, INACTIVE."
+  type        = string
+  default     = "INACTIVE"
+
+  validation {
+    condition     = contains(["ACTIVE", "INACTIVE"], var.commitments_default_status)
+    error_message = "commitments_default_status must be one of: ACTIVE, INACTIVE."
+  }
+}
+
+variable "commitments_auto_assignment" {
+  description = "Whether to automatically assign commitments to workloads."
+  type        = bool
+  default     = false
+}
+
+variable "cur_s3_bucket_name" {
+  description = "Name of the S3 bucket containing AWS Cost and Usage Reports (CUR). When set, grants the CAST AI role read access to the bucket."
+  type        = string
+  default     = ""
+}
+
+variable "cur_s3_bucket_region" {
+  description = "AWS region of the CUR S3 bucket. Required when cur_s3_bucket_name is set."
+  type        = string
+  default     = ""
+}
+
+variable "cur_s3_bucket_account_id" {
+  description = "AWS account ID that owns the CUR S3 bucket. Optional, used for cross-account bucket access."
+  type        = string
+  default     = ""
 }
 
 variable "tags" {
