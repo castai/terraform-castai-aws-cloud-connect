@@ -2,9 +2,9 @@ locals {
   current_account_id = data.aws_caller_identity.current.account_id
 
   # Determine if this is a management account (org-scoped)
-  is_management_account = var.force_account_scope ? false : (
+  is_management_account = var.org_scope_enabled ? (
     try(data.aws_organizations_organization.current[0].master_account_id == local.current_account_id, false)
-  )
+  ) : false
 
   # Multi-account mode: not a management account, but explicit account IDs provided.
   # Syncs multiple accounts without needing management account access or Organizations APIs.
@@ -46,5 +46,5 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 data "aws_organizations_organization" "current" {
-  count = var.force_account_scope ? 0 : 1
+  count = var.org_scope_enabled ? 1 : 0
 }

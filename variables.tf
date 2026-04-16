@@ -38,8 +38,8 @@ variable "scope" {
   }
 }
 
-variable "force_account_scope" {
-  description = "Force account-scoped integration even if running in a management account"
+variable "org_scope_enabled" {
+  description = "Enable organization-scoped integration. When true, the module calls the AWS Organizations API to detect if the current account is the management account and deploys roles to member accounts via CloudFormation StackSet. Requires organizations:DescribeOrganization permission. Leave false (default) when running from a member account."
   type        = bool
   default     = false
 }
