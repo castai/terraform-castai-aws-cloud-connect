@@ -17,7 +17,6 @@ module "castai_aws_integration" {
   }
 
   eks_k8s_sync_enabled = true
-  eks_cluster_arns     = ["arn:aws:eks:us-east-1:487609081575:cluster/ihor-14-04"]
 }
 
 variable "castai_api_key" {

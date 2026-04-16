@@ -29,7 +29,6 @@ locals {
   )
 
   # EKS access entry configuration — see eks.tf
-  eks_enabled          = var.eks_k8s_sync_enabled && contains(["ALL", "ALL_MINIMAL_PERMISSIONS"], var.scope)
   eks_cluster_arns_csv = join(",", var.eks_cluster_arns)
 
   # CUR S3 bucket read statement — appended to the discovery policy when a bucket is configured

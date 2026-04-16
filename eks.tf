@@ -1,11 +1,30 @@
-# CloudFormation stack for EKS access entry configuration (account-scoped and multi-account current account)
-# For org-scoped integrations, the Lambda is deployed via the StackSet in stackset.tf
+# EKS access entry configuration for k8s object sync.
+#
+# Account-scoped: native Terraform resources (aws_eks_access_entry + aws_eks_access_policy_association)
+# Org-scoped / multi-account: Lambda deployed via CloudFormation StackSet in stackset.tf,
+#   since Terraform cannot create resources in member accounts directly.
 
 locals {
+  eks_enabled = var.eks_k8s_sync_enabled && contains(["ALL", "ALL_MINIMAL_PERMISSIONS"], var.scope)
+
+  # Derive cluster names from provided ARNs (format: arn:aws:eks:<region>:<account>:cluster/<name>)
+  eks_cluster_names_from_arns = toset([
+    for arn in var.eks_cluster_arns : split("/", arn)[1]
+  ])
+
+  # For account-scoped: use provided cluster names or discover all clusters in the current region
+  eks_cluster_names = local.eks_enabled && !local.is_management_account && (!local.is_multi_account || local.current_account_in_list) ? (
+    length(var.eks_cluster_arns) > 0
+    ? local.eks_cluster_names_from_arns
+    : toset(data.aws_eks_clusters.all[0].names)
+  ) : toset([])
+
+  # StackSet Lambda locals — used by stackset.tf for org-scoped / multi-account deployments
+
   # IAM policy actions for the EKS access Lambda
   eks_lambda_iam_actions = ["ec2:DescribeRegions", "eks:ListClusters", "eks:DescribeCluster", "eks:CreateAccessEntry", "eks:DeleteAccessEntry", "eks:DescribeAccessEntry", "eks:AssociateAccessPolicy", "eks:ListAssociatedAccessPolicies"]
 
-  # Shared Lambda function properties (everything except DependsOn and CAST_ROLE_ARN)
+  # Shared Lambda function properties
   eks_cfn_lambda_properties = {
     FunctionName = { "Fn::Sub" = "$${RoleName}-eks-access" }
     Runtime      = "python3.11"
@@ -18,7 +37,7 @@ locals {
     }
   }
 
-  # IAM role and trigger — identical in both standalone and stackset contexts
+  # IAM role and trigger — used in the StackSet template
   eks_cfn_role_and_trigger = {
     EksAccessLambdaRole = {
       Type = "AWS::IAM::Role"
@@ -61,26 +80,8 @@ locals {
     }
   }
 
-  # Stored as JSON strings to avoid Terraform's conditional type-unification errors
-  # (true/false branches must have identical object shapes). Consumers use jsondecode().
-
-  # Standalone stack: role ARN from CFN parameter, Lambda depends on own IAM role
-  eks_cfn_resources_standalone = local.eks_enabled ? jsonencode(merge(local.eks_cfn_role_and_trigger, {
-    EksAccessLambda = {
-      Type      = "AWS::Lambda::Function"
-      DependsOn = ["EksAccessLambdaRole"]
-      Properties = merge(local.eks_cfn_lambda_properties, {
-        Environment = {
-          Variables = {
-            CAST_ROLE_ARN        = { Ref = "CastRoleArn" }
-            ALLOWED_CLUSTER_ARNS = { Ref = "AllowedClusterArns" }
-          }
-        }
-      })
-    }
-  })) : jsonencode({})
-
-  # StackSet: role ARN from same-stack resource, Lambda depends on discovery role
+  # Stored as JSON string to avoid Terraform's conditional type-unification errors.
+  # Consumer (stackset.tf) uses jsondecode().
   eks_cfn_resources_stackset = local.eks_enabled ? jsonencode(merge(local.eks_cfn_role_and_trigger, {
     EksAccessLambda = {
       Type      = "AWS::Lambda::Function"
@@ -96,7 +97,6 @@ locals {
     }
   })) : jsonencode({})
 
-  # Python Lambda code for EKS access entry configuration
   eks_lambda_code = <<-PYTHON
 import boto3
 import json
@@ -206,39 +206,31 @@ def cleanup_cluster(name, region, role_arn):
 PYTHON
 }
 
-resource "aws_cloudformation_stack" "eks_access" {
-  count = local.eks_enabled && !local.is_management_account && (!local.is_multi_account || local.current_account_in_list) ? 1 : 0
+# Account-scoped EKS access entries — created directly via Terraform native resources.
+# For org-scoped / multi-account, the Lambda in the StackSet (stackset.tf) handles this.
 
-  name         = "${var.role_name}-eks-access"
-  capabilities = ["CAPABILITY_NAMED_IAM"]
-  tags         = var.tags
+data "aws_eks_clusters" "all" {
+  count = local.eks_enabled && !local.is_management_account && (!local.is_multi_account || local.current_account_in_list) && length(var.eks_cluster_arns) == 0 ? 1 : 0
+}
 
-  parameters = {
-    CastRoleArn        = aws_iam_role.castai_discovery.arn
-    RoleName           = var.role_name
-    AllowedClusterArns = local.eks_cluster_arns_csv
+resource "aws_eks_access_entry" "castai" {
+  for_each = local.eks_cluster_names
+
+  cluster_name  = each.value
+  principal_arn = aws_iam_role.castai_discovery.arn
+  type          = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "castai" {
+  for_each = local.eks_cluster_names
+
+  cluster_name  = each.value
+  principal_arn = aws_iam_role.castai_discovery.arn
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminViewPolicy"
+
+  access_scope {
+    type = "cluster"
   }
 
-  template_body = jsonencode({
-    AWSTemplateFormatVersion = "2010-09-09"
-    Description              = "CAST AI EKS access entry configuration"
-
-    Parameters = {
-      CastRoleArn = {
-        Type        = "String"
-        Description = "ARN of the CAST AI discovery role"
-      }
-      RoleName = {
-        Type        = "String"
-        Description = "IAM role name for discovery"
-      }
-      AllowedClusterArns = {
-        Type        = "String"
-        Description = "Comma-separated list of EKS cluster ARNs to configure access for (empty means all)"
-        Default     = ""
-      }
-    }
-
-    Resources = jsondecode(local.eks_cfn_resources_standalone)
-  })
+  depends_on = [aws_eks_access_entry.castai]
 }

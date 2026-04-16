@@ -32,7 +32,7 @@ output "stackset_name" {
   )
 }
 
-output "eks_access_stack_id" {
-  description = "CloudFormation stack ID for EKS access configuration (account-scoped only)"
-  value       = local.eks_enabled && !local.is_management_account ? aws_cloudformation_stack.eks_access[0].id : null
+output "eks_cluster_names" {
+  description = "EKS cluster names configured with CAST AI access entries (account-scoped only)"
+  value       = local.eks_cluster_names
 }
