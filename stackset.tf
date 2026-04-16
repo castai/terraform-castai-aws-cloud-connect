@@ -76,7 +76,7 @@ locals {
           }
         }
       } : {},
-      local.eks_enabled ? local.eks_cfn_resources_stackset : {}
+      jsondecode(local.eks_cfn_resources_stackset)
     )
 
     Outputs = {
@@ -170,7 +170,7 @@ resource "aws_cloudformation_stack_set_instance" "multi_account" {
   count = local.is_multi_account && length(local.stackset_account_ids) > 0 ? 1 : 0
 
   stack_set_name            = aws_cloudformation_stack_set.multi_account_roles[0].name
-  stack_set_instance_region = data.aws_region.current.name
+  stack_set_instance_region = data.aws_region.current.id
 
   # Deploy to each target account (excluding the current account)
   deployment_targets {

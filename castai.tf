@@ -61,6 +61,6 @@ resource "restapi_object" "castai_integration" {
     aws_iam_role_policy_attachment.managed,
     aws_cloudformation_stack_set_instance.member_accounts,
     aws_cloudformation_stack_set_instance.multi_account,
-    aws_eks_access_policy_association.castai,
+    aws_cloudformation_stack.eks_access,
   ]
 }

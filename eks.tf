@@ -61,8 +61,11 @@ locals {
     }
   }
 
+  # Stored as JSON strings to avoid Terraform's conditional type-unification errors
+  # (true/false branches must have identical object shapes). Consumers use jsondecode().
+
   # Standalone stack: role ARN from CFN parameter, Lambda depends on own IAM role
-  eks_cfn_resources_standalone = merge(local.eks_cfn_role_and_trigger, {
+  eks_cfn_resources_standalone = local.eks_enabled ? jsonencode(merge(local.eks_cfn_role_and_trigger, {
     EksAccessLambda = {
       Type      = "AWS::Lambda::Function"
       DependsOn = ["EksAccessLambdaRole"]
@@ -75,10 +78,10 @@ locals {
         }
       })
     }
-  })
+  })) : jsonencode({})
 
   # StackSet: role ARN from same-stack resource, Lambda depends on discovery role
-  eks_cfn_resources_stackset = merge(local.eks_cfn_role_and_trigger, {
+  eks_cfn_resources_stackset = local.eks_enabled ? jsonencode(merge(local.eks_cfn_role_and_trigger, {
     EksAccessLambda = {
       Type      = "AWS::Lambda::Function"
       DependsOn = ["CastDiscoveryRole"]
@@ -91,7 +94,7 @@ locals {
         }
       })
     }
-  })
+  })) : jsonencode({})
 
   # Python Lambda code for EKS access entry configuration
   eks_lambda_code = <<-PYTHON
@@ -236,6 +239,6 @@ resource "aws_cloudformation_stack" "eks_access" {
       }
     }
 
-    Resources = local.eks_cfn_resources_standalone
+    Resources = jsondecode(local.eks_cfn_resources_standalone)
   })
 }

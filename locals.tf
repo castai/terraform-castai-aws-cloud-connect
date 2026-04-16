@@ -28,6 +28,10 @@ locals {
     length(var.account_ids) == 0 || contains(var.account_ids, local.current_account_id)
   )
 
+  # EKS access entry configuration — see eks.tf
+  eks_enabled          = var.eks_k8s_sync_enabled && contains(["ALL", "ALL_MINIMAL_PERMISSIONS"], var.scope)
+  eks_cluster_arns_csv = join(",", var.eks_cluster_arns)
+
   # CUR S3 bucket read statement — appended to the discovery policy when a bucket is configured
   cur_s3_statement = var.cur_s3_bucket_name != "" ? [
     {
