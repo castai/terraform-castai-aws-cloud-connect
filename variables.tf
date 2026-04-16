@@ -1,5 +1,5 @@
 variable "castai_api_url" {
-  description = "CAST AI API URL"
+  description = "Cast AI API URL"
   type        = string
   default     = "https://api.cast.ai"
 }
@@ -11,7 +11,7 @@ variable "castai_api_key" {
 }
 
 variable "castai_organization_id" {
-  description = "CAST AI organization ID"
+  description = "Cast AI organization ID"
   type        = string
 }
 
@@ -98,7 +98,7 @@ variable "commitments_auto_assignment" {
 }
 
 variable "cur_s3_bucket_name" {
-  description = "Name of the S3 bucket containing AWS Cost and Usage Reports (CUR). When set, grants the CAST AI role read access to the bucket."
+  description = "Name of the S3 bucket containing AWS Cost and Usage Reports (CUR). When set, grants the Cast AI role read access to the bucket."
   type        = string
   default     = ""
 }

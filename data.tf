@@ -1,4 +1,4 @@
-# Fetch structured onboarding config from the CAST AI API
+# Fetch structured onboarding config from the Cast AI API
 data "http" "onboarding_config" {
   url = "${var.castai_api_url}/inventory/v1beta/organizations/${var.castai_organization_id}/cloud-asset-integrations:getOnboardingConfig?provider=AWS&scope=${var.scope}"
 
@@ -10,7 +10,7 @@ data "http" "onboarding_config" {
 check "onboarding_config_status" {
   assert {
     condition     = data.http.onboarding_config.status_code == 200
-    error_message = "Failed to fetch onboarding config from CAST AI API (status: ${data.http.onboarding_config.status_code}). Check castai_api_url and castai_api_key."
+    error_message = "Failed to fetch onboarding config from Cast AI API (status: ${data.http.onboarding_config.status_code}). Check castai_api_url and castai_api_key."
   }
 }
 

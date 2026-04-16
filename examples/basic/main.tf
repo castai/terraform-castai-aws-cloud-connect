@@ -13,7 +13,7 @@ module "castai_aws_integration" {
 
   tags = {
     ManagedBy = "Terraform"
-    Purpose   = "CAST AI Cloud Asset Discovery"
+    Purpose   = "Cast AI Cloud Asset Discovery"
   }
 
   eks_k8s_sync_enabled = true

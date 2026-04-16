@@ -4,17 +4,17 @@
 locals {
   stackset_template_body = jsonencode({
     AWSTemplateFormatVersion = "2010-09-09"
-    Description              = "CAST AI discovery role for member accounts - ${var.scope} scope"
+    Description              = "Cast AI discovery role for member accounts - ${var.scope} scope"
 
     Parameters = merge(
       {
         CastUserArn = {
           Type        = "String"
-          Description = "CAST AI user ARN"
+          Description = "Cast AI user ARN"
         }
         OrganizationId = {
           Type        = "String"
-          Description = "CAST AI organization ID"
+          Description = "Cast AI organization ID"
         }
         RoleName = {
           Type        = "String"
@@ -107,7 +107,7 @@ resource "aws_cloudformation_stack_set" "member_roles" {
   count = local.is_management_account ? 1 : 0
 
   name             = var.stackset_name
-  description      = "CAST AI discovery role for member accounts - ${var.scope} scope"
+  description      = "Cast AI discovery role for member accounts - ${var.scope} scope"
   permission_model = "SERVICE_MANAGED"
   tags             = var.tags
 
@@ -155,7 +155,7 @@ resource "aws_cloudformation_stack_set" "multi_account_roles" {
   count = local.is_multi_account && length(local.stackset_account_ids) > 0 ? 1 : 0
 
   name             = var.stackset_name
-  description      = "CAST AI discovery role for target accounts - ${var.scope} scope"
+  description      = "Cast AI discovery role for target accounts - ${var.scope} scope"
   permission_model = "SELF_MANAGED"
   tags             = var.tags
 

@@ -1,20 +1,20 @@
 output "role_arn" {
-  description = "ARN of the IAM role created for CAST AI"
+  description = "ARN of the IAM role created for Cast AI"
   value       = aws_iam_role.castai_discovery.arn
 }
 
 output "castai_user_arn" {
-  description = "CAST AI user ARN (fetched from API)"
+  description = "Cast AI user ARN (fetched from API)"
   value       = local.castai_user_arn
 }
 
 output "role_name" {
-  description = "Name of the IAM role created for CAST AI"
+  description = "Name of the IAM role created for Cast AI"
   value       = aws_iam_role.castai_discovery.name
 }
 
 output "integration_id" {
-  description = "ID of the CAST AI cloud asset integration"
+  description = "ID of the Cast AI cloud asset integration"
   value       = jsondecode(restapi_object.castai_integration.api_response).id
 }
 
@@ -33,6 +33,6 @@ output "stackset_name" {
 }
 
 output "eks_cluster_names" {
-  description = "EKS cluster names configured with CAST AI access entries (account-scoped only)"
+  description = "EKS cluster names configured with Cast AI access entries (account-scoped only)"
   value       = local.eks_cluster_names
 }

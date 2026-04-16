@@ -89,7 +89,7 @@ locals {
       Properties = merge(local.eks_cfn_lambda_properties, {
         Environment = {
           Variables = {
-            CAST_ROLE_ARN        = { "Fn::GetAtt" = ["CastDiscoveryRole", "Arn"] }
+            Cast_ROLE_ARN        = { "Fn::GetAtt" = ["CastDiscoveryRole", "Arn"] }
             ALLOWED_CLUSTER_ARNS = { Ref = "AllowedClusterArns" }
           }
         }
@@ -120,7 +120,7 @@ def is_cluster_allowed(cluster_arn, allowed_arns):
 def handler(event, context):
     print(f"Event: {json.dumps(event)}")
     try:
-        role_arn = os.environ["CAST_ROLE_ARN"]
+        role_arn = os.environ["Cast_ROLE_ARN"]
         if event.get("RequestType") == "Delete":
             result = cleanup_all_clusters(role_arn)
         else:
