@@ -1,11 +1,11 @@
 variable "castai_api_url" {
-  description = "Cast AI API URL"
+  description = "CAST AI API URL"
   type        = string
-  default     = "https://api.dev-master.cast.ai"
+  default     = "https://api.cast.ai"
 }
 
 variable "castai_api_key" {
-  description = "CAST AI API key"
+  description = "Cast AI API key"
   type        = string
   sensitive   = true
 }
