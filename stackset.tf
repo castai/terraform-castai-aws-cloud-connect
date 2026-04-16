@@ -6,20 +6,29 @@ locals {
     AWSTemplateFormatVersion = "2010-09-09"
     Description              = "CAST AI discovery role for member accounts - ${var.scope} scope"
 
-    Parameters = {
-      CastUserArn = {
-        Type        = "String"
-        Description = "CAST AI user ARN"
-      }
-      OrganizationId = {
-        Type        = "String"
-        Description = "CAST AI organization ID"
-      }
-      RoleName = {
-        Type        = "String"
-        Description = "IAM role name for discovery"
-      }
-    }
+    Parameters = merge(
+      {
+        CastUserArn = {
+          Type        = "String"
+          Description = "CAST AI user ARN"
+        }
+        OrganizationId = {
+          Type        = "String"
+          Description = "CAST AI organization ID"
+        }
+        RoleName = {
+          Type        = "String"
+          Description = "IAM role name for discovery"
+        }
+      },
+      local.eks_enabled ? {
+        AllowedClusterArns = {
+          Type        = "String"
+          Description = "Comma-separated list of EKS cluster ARNs to configure access for (empty means all)"
+          Default     = ""
+        }
+      } : {}
+    )
 
     Resources = merge(
       {
@@ -66,7 +75,8 @@ locals {
             }
           }
         }
-      } : {}
+      } : {},
+      local.eks_enabled ? local.eks_cfn_resources_stackset : {}
     )
 
     Outputs = {
@@ -77,11 +87,16 @@ locals {
     }
   })
 
-  stackset_parameter_overrides = {
-    CastUserArn    = local.castai_user_arn
-    OrganizationId = var.castai_organization_id
-    RoleName       = var.role_name
-  }
+  stackset_parameter_overrides = merge(
+    {
+      CastUserArn    = local.castai_user_arn
+      OrganizationId = var.castai_organization_id
+      RoleName       = var.role_name
+    },
+    local.eks_enabled ? {
+      AllowedClusterArns = local.eks_cluster_arns_csv
+    } : {}
+  )
 }
 
 # =============================================================================
@@ -155,7 +170,7 @@ resource "aws_cloudformation_stack_set_instance" "multi_account" {
   count = local.is_multi_account && length(local.stackset_account_ids) > 0 ? 1 : 0
 
   stack_set_name            = aws_cloudformation_stack_set.multi_account_roles[0].name
-  stack_set_instance_region = data.aws_region.current.id
+  stack_set_instance_region = data.aws_region.current.name
 
   # Deploy to each target account (excluding the current account)
   deployment_targets {
