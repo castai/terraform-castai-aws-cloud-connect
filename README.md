@@ -6,17 +6,68 @@ This Terraform module onboards AWS accounts to [Cast AI Cloud Connect](https://c
 
 - Creates an IAM role with a trust policy allowing Cast AI to assume it
 - Attaches IAM permissions based on the selected scope
+- Registers the integration with the Cast AI API
 - Deploys roles to member accounts via CloudFormation StackSets (org-scoped or multi-account)
 - Optionally configures EKS access entries for Kubernetes object sync
-- Registers the integration with the Cast AI API
 
 ## Deployment modes
 
-| Mode | When | How |
-|------|------|-----|
-| **Account-scoped** | Single AWS account | Default — creates role in current account |
-| **Org-scoped** | Management account | Auto-detected — deploys StackSet (SERVICE_MANAGED) to member accounts |
-| **Multi-account** | No management account access | Set `account_ids` — deploys StackSet (SELF_MANAGED) to listed accounts |
+### Account-scoped (default)
+
+Runs from any AWS account. Creates the discovery role in the current account only.
+
+```hcl
+module "castai_aws_integration" {
+  source = "castai/aws-cloud-connect/castai"
+
+  castai_api_key         = var.castai_api_key
+  castai_organization_id = var.castai_organization_id
+}
+```
+
+### Org-scoped
+
+Runs from the AWS Organizations management account. The module detects this automatically and deploys discovery roles to all member accounts (or a filtered subset) via a SERVICE_MANAGED CloudFormation StackSet. Requires `organizations:DescribeOrganization` permission.
+
+```hcl
+module "castai_aws_integration" {
+  source = "castai/aws-cloud-connect/castai"
+
+  castai_api_key         = var.castai_api_key
+  castai_organization_id = var.castai_organization_id
+
+  org_scope_enabled = true
+  # Optionally limit to specific member accounts:
+  # account_ids = ["111122223333", "444455556666"]
+}
+```
+
+### Multi-account
+
+Use this when you don't have management account access but want to onboard multiple accounts. The module deploys a SELF_MANAGED CloudFormation StackSet to the listed accounts.
+
+**Prerequisites:** Each target account must have an `AWSCloudFormationStackSetExecutionRole` IAM role (or a custom role specified via `stackset_execution_role_name`) that CloudFormation can assume. The calling account must have an `AWSCloudFormationStackSetAdministrationRole` (or custom role via `stackset_administration_role_arn`). See [AWS docs](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacksets-prereqs-self-managed.html) for setup instructions.
+
+```hcl
+module "castai_aws_integration" {
+  source = "castai/aws-cloud-connect/castai"
+
+  castai_api_key         = var.castai_api_key
+  castai_organization_id = var.castai_organization_id
+
+  account_ids = ["111122223333", "444455556666"]
+
+  # Optional: override default StackSet roles
+  # stackset_administration_role_arn = "arn:aws:iam::MGMT_ACCOUNT:role/MyAdminRole"
+  # stackset_execution_role_name     = "MyExecutionRole"
+}
+```
+
+| Mode | Variable | StackSet type | Prerequisite roles |
+|------|----------|---------------|--------------------|
+| Account-scoped | — | None | None |
+| Org-scoped | `org_scope_enabled = true` | SERVICE_MANAGED | None (AWS-managed) |
+| Multi-account | `account_ids = [...]` | SELF_MANAGED | Admin role in calling account, execution role in each target account |
 
 ## Quick start
 
@@ -57,7 +108,10 @@ module "castai_aws_integration" {
 }
 ```
 
-Requires scope `ALL` or `ALL_MINIMAL_PERMISSIONS`. Deploys a Lambda function that creates EKS access entries with `AmazonEKSAdminViewPolicy` for the Cast AI discovery role.
+Requires scope `ALL` or `ALL_MINIMAL_PERMISSIONS`.
+
+- **Account-scoped:** creates EKS access entries directly via Terraform for all clusters in the current region (or the specified ARNs).
+- **Org-scoped / multi-account:** deploys a Lambda via the CloudFormation StackSet that discovers and configures clusters across all regions in each member account.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements

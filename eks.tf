@@ -5,8 +5,6 @@
 #   since Terraform cannot create resources in member accounts directly.
 
 locals {
-  eks_enabled = var.eks_k8s_sync_enabled && contains(["ALL", "ALL_MINIMAL_PERMISSIONS"], var.scope)
-
   # Derive cluster names from provided ARNs (format: arn:aws:eks:<region>:<account>:cluster/<name>)
   eks_cluster_names_from_arns = toset([
     for arn in var.eks_cluster_arns : split("/", arn)[1]
