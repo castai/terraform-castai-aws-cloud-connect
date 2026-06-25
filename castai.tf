@@ -38,6 +38,8 @@ locals {
 resource "restapi_object" "castai_integration" {
   path = "/inventory/v1beta/organizations/${var.castai_organization_id}/cloud-asset-integrations"
 
+  update_method = "PATCH"
+
   data = jsonencode({
     enabled  = true
     name     = var.integration_name
