@@ -65,4 +65,10 @@ resource "restapi_object" "castai_integration" {
     aws_cloudformation_stack_set_instance.multi_account,
     aws_eks_access_policy_association.castai,
   ]
+
+  # GET returns a different shape than we POST, so the provider rewrites `data`
+  # on every refresh, producing a permanent diff that no apply can resolve.
+  lifecycle {
+    ignore_changes = [data]
+  }
 }
