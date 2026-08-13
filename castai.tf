@@ -38,6 +38,22 @@ locals {
 resource "restapi_object" "castai_integration" {
   path = "/inventory/v1beta/organizations/${var.castai_organization_id}/cloud-asset-integrations"
 
+  # The API defines PATCH for updates (no PUT). Send a partial body containing
+  # only the mutable fields (enabled, name, settings) accepted by the update RPC.
+  update_method = "PATCH"
+  update_data = jsonencode({
+    enabled = true
+    name    = var.integration_name
+    settings = {
+      commitments = {
+        defaultStatus       = var.commitments_default_status
+        assignAutomatically = var.commitments_auto_assignment
+      }
+    }
+  })
+
+  ignore_server_additions = true
+
   data = jsonencode({
     enabled  = true
     name     = var.integration_name
@@ -49,8 +65,8 @@ resource "restapi_object" "castai_integration" {
     metadata = local.integration_metadata
     settings = {
       commitments = {
-        defaultStatus  = var.commitments_default_status
-        autoAssignment = var.commitments_auto_assignment
+        defaultStatus       = var.commitments_default_status
+        assignAutomatically = var.commitments_auto_assignment
       }
     }
   })

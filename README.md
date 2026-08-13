@@ -10,6 +10,10 @@ This Terraform module onboards AWS accounts to [Cast AI Cloud Connect](https://c
 - Deploys roles to member accounts via CloudFormation StackSets (org-scoped or multi-account)
 - Optionally configures EKS access entries for Kubernetes object sync
 
+## Updates
+
+The Cast AI API only accepts updates (PATCH) to a limited set of mutable fields: `enabled`, `name`, and `settings.commitments` (`defaultStatus`, `assignAutomatically`). Changes to these values are sent via PATCH on `terraform apply`. All other fields (`provider`, `scope`, `aws_credentials`, `metadata`) are create-only and are ignored on update; changing them requires recreating the integration.
+
 ## Deployment modes
 
 ### Account-scoped (default)
