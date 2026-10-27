@@ -8,9 +8,9 @@ locals {
 
     Parameters = merge(
       {
-        CastUserArn = {
+        CastPrincipalArn = {
           Type        = "String"
-          Description = "Cast AI user ARN"
+          Description = "Cast AI principal ARN (CAST AWS account root)"
         }
         OrganizationId = {
           Type        = "String"
@@ -42,7 +42,7 @@ locals {
                 {
                   Effect = "Allow"
                   Principal = {
-                    AWS = { Ref = "CastUserArn" }
+                    AWS = { Ref = "CastPrincipalArn" }
                   }
                   Action = "sts:AssumeRole"
                   Condition = {
@@ -89,9 +89,9 @@ locals {
 
   stackset_parameter_overrides = merge(
     {
-      CastUserArn    = local.castai_user_arn
-      OrganizationId = var.castai_organization_id
-      RoleName       = var.role_name
+      CastPrincipalArn = local.castai_account_root_arn
+      OrganizationId   = var.castai_organization_id
+      RoleName         = var.role_name
     },
     local.eks_enabled ? {
       AllowedClusterArns = local.eks_cluster_arns_csv

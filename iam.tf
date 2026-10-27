@@ -8,7 +8,7 @@ resource "aws_iam_role" "castai_discovery" {
       {
         Effect = "Allow"
         Principal = {
-          AWS = local.castai_user_arn
+          AWS = local.castai_account_root_arn
         }
         Action = "sts:AssumeRole"
         Condition = {

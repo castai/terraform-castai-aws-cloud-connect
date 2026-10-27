@@ -3,9 +3,14 @@ output "role_arn" {
   value       = aws_iam_role.castai_discovery.arn
 }
 
-output "castai_user_arn" {
-  description = "Cast AI user ARN (fetched from API)"
-  value       = local.castai_user_arn
+output "castai_role_arn" {
+  description = "ARN of the CAST IAM role that assumes the customer role (fetched from API)"
+  value       = local.castai_role_arn
+}
+
+output "castai_aws_account_id" {
+  description = "CAST AWS account ID — the trust principal is this account's root (fetched from API)"
+  value       = local.castai_aws_account_id
 }
 
 output "role_name" {

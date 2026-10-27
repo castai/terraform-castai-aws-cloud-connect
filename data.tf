@@ -21,6 +21,13 @@ check "cur_s3_bucket_config" {
   }
 }
 
+check "onboarding_config_role_based" {
+  assert {
+    condition     = local.castai_aws_account_id != null
+    error_message = "Onboarding config response does not include castAwsAccountId. Module v2 requires the role-based Cloud Connect backend; pin the module to the latest v1.x release for the legacy user-based backend."
+  }
+}
+
 check "onboarding_config_has_permissions" {
   assert {
     condition = (
@@ -32,9 +39,13 @@ check "onboarding_config_has_permissions" {
 }
 
 locals {
-  onboarding_config = jsondecode(data.http.onboarding_config.response_body)
-  castai_user_arn   = local.onboarding_config.awsConfig.castUserArn
-  api_permissions   = try(local.onboarding_config.awsConfig.permissions, [])
+  onboarding_config     = jsondecode(data.http.onboarding_config.response_body)
+  castai_aws_account_id = try(local.onboarding_config.awsConfig.castAwsAccountId, null)
+  castai_role_arn       = try(local.onboarding_config.awsConfig.castRoleArn, null)
+
+  castai_account_root_arn = local.castai_aws_account_id != null ? "arn:aws:iam::${local.castai_aws_account_id}:root" : null
+
+  api_permissions = try(local.onboarding_config.awsConfig.permissions, [])
   api_managed_policies = [
     for name in try(local.onboarding_config.awsConfig.managedPolicies, []) :
     "arn:aws:iam::aws:policy/${name}"
