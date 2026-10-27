@@ -11,7 +11,6 @@ provider "restapi" {
 locals {
   integration_metadata = merge(
     {
-      crossRoleUserArn  = local.castai_user_arn
       organizationScope = local.is_management_account || local.is_multi_account
     },
     (local.is_management_account || local.is_multi_account) && length(var.account_ids) > 0 ? {

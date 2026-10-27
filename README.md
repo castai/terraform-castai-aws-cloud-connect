@@ -10,6 +10,21 @@ This Terraform module onboards AWS accounts to [Cast AI Cloud Connect](https://c
 - Deploys roles to member accounts via CloudFormation StackSets (org-scoped or multi-account)
 - Optionally configures EKS access entries for Kubernetes object sync
 
+## Version compatibility
+
+**v2.x** requires the role-based Cloud Connect platform: the onboarding config API must return
+`castAwsAccountId`/`castRoleArn` (role-based backend). Customer roles trust the whole CAST AWS account
+(account-root principal) guarded by `sts:ExternalId` = organization ID. No CAST IAM users or static keys
+are created.
+
+**v1.x** pins keep working — the backend serves a compatibility shim that returns the account-root ARN
+via the deprecated `castUserArn` field and accepts it back as `crossRoleUserArn`. Upgrade to v2 when
+convenient; bump the version constraint to `~> 2.0`.
+
+v1 → v2 changes: `castai_user_arn` output renamed to `castai_role_arn` (+ new `castai_aws_account_id`);
+StackSet parameter `CastUserArn` renamed to `CastPrincipalArn` (CloudFormation rolls the update to member
+accounts automatically); `crossRoleUserArn` is no longer sent in integration metadata.
+
 ## Updates
 
 The Cast AI API only accepts updates (PATCH) to a limited set of mutable fields: `enabled`, `name`, and `settings.commitments` (`defaultStatus`, `assignAutomatically`). Changes to these values are sent via PATCH on `terraform apply`. All other fields (`provider`, `scope`, `aws_credentials`, `metadata`) are create-only and are ignored on update; changing them requires recreating the integration.
@@ -192,7 +207,8 @@ No modules.
 
 | Name | Description |
 | ---- | ----------- |
-| <a name="output_castai_user_arn"></a> [castai\_user\_arn](#output\_castai\_user\_arn) | Cast AI user ARN (fetched from API) |
+| <a name="output_castai_aws_account_id"></a> [castai\_aws\_account\_id](#output\_castai\_aws\_account\_id) | CAST AWS account ID — the trust principal is this account's root (fetched from API) |
+| <a name="output_castai_role_arn"></a> [castai\_role\_arn](#output\_castai\_role\_arn) | ARN of the CAST IAM role that assumes the customer role (fetched from API) |
 | <a name="output_eks_cluster_names"></a> [eks\_cluster\_names](#output\_eks\_cluster\_names) | EKS cluster names configured with Cast AI access entries (account-scoped only) |
 | <a name="output_integration_id"></a> [integration\_id](#output\_integration\_id) | ID of the Cast AI cloud asset integration |
 | <a name="output_is_org_scoped"></a> [is\_org\_scoped](#output\_is\_org\_scoped) | Whether this is an organization-scoped integration |
