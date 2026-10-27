@@ -17,9 +17,10 @@ This Terraform module onboards AWS accounts to [Cast AI Cloud Connect](https://c
 (account-root principal) guarded by `sts:ExternalId` = organization ID. No CAST IAM users or static keys
 are created.
 
-**v1.x pins break against the CAP-217 backend by design** — the deprecated `castUserArn` field is no
-longer returned and `crossRoleUserArn` metadata is rejected. Migrate by bumping the version constraint to
-`~> 2.0`; the upgrade is forced because dropping CAST IAM users is a deliberate security improvement.
+**v1.x keeps working during the rollout** — the backend ships a temporary compatibility shim (account-root
+ARN served as deprecated `castUserArn`, accepted back as `crossRoleUserArn`). The shim is removed in a
+follow-up backend change once v2.0.0 is out, so upgrade promptly: bump the version constraint to `~> 2.0`.
+After the shim is removed, remaining v1.x pins fail at plan time (the API no longer returns `castUserArn`).
 
 v1 → v2 changes: `castai_user_arn` output renamed to `castai_role_arn` (+ new `castai_aws_account_id`);
 StackSet parameter `CastUserArn` renamed to `CastPrincipalArn` (CloudFormation rolls the update to member
