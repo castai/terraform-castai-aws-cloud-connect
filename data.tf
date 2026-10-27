@@ -43,8 +43,6 @@ locals {
   castai_aws_account_id = try(local.onboarding_config.awsConfig.castAwsAccountId, null)
   castai_role_arn       = try(local.onboarding_config.awsConfig.castRoleArn, null)
 
-  # CAP-217: customers trust the whole CAST AWS account (account-root principal),
-  # guarded by ExternalId = organization ID. Survives CAST-side role renames/recreation.
   castai_account_root_arn = local.castai_aws_account_id != null ? "arn:aws:iam::${local.castai_aws_account_id}:root" : null
 
   api_permissions = try(local.onboarding_config.awsConfig.permissions, [])
