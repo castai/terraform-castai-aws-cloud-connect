@@ -118,6 +118,7 @@ resource "aws_cloudformation_stack_set" "member_roles" {
 
   capabilities  = ["CAPABILITY_NAMED_IAM"]
   template_body = local.stackset_template_body
+  parameters    = local.stackset_parameter_overrides
 
   lifecycle {
     ignore_changes = [administration_role_arn]
@@ -164,6 +165,7 @@ resource "aws_cloudformation_stack_set" "multi_account_roles" {
 
   capabilities  = ["CAPABILITY_NAMED_IAM"]
   template_body = local.stackset_template_body
+  parameters    = local.stackset_parameter_overrides
 }
 
 resource "aws_cloudformation_stack_set_instance" "multi_account" {
